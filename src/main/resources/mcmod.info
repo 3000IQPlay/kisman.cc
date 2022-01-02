@@ -1,0 +1,16 @@
+[
+{
+  "modid": "kisman",
+  "name": "kisman.cc+",
+  "description": "The Very Best Minecraft Pvp and Pve client by _kisman_, DenYoyo",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "https://discord.gg/CJMhy74NYF",
+  "updateUrl": "",
+  "authorList": ["_kisman_", "DenYoyo"],
+  "credits": "_kisman_#7777, L3gandary#4009",
+  "logoFile": "assets/kismancc/banner.png",
+  "screenshots": [],
+  "dependencies": []
+}
+]

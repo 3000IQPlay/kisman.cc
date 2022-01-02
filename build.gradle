@@ -1,0 +1,158 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url = "http://files.minecraftforge.net/maven"//https://repo.spongepowered.org/repository/maven-public/
+        }
+        maven {
+            name = 'gradle plugins'
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            name = 'SpongePowered'
+            url = 'https://repo.spongepowered.org/repository/maven-public/'
+        }
+        maven {
+            name = 'sonatype'
+            url = 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.4-SNAPSHOT'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'com.google.code.gson:gson:2.8.6'
+        classpath 'gradle.plugin.com.matthewprenger:CurseGradle:1.0.9'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.matthewprenger.cursegradle'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = 'b0.1.6.1-plus'
+group = 'com.kisman.cc'
+archivesBaseName = 'kisman.cc'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+
+compileJava.options.encoding = 'UTF-8'
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+minecraft {
+    version = "1.12.2-14.23.5.2768"
+    runDir = "run"
+    mappings = "snapshot_20171003"
+}
+
+repositories {
+    maven {
+        name = 'spongepowered-repo'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    }
+    maven {
+        name = 'impactdevelopment-repo'
+        url = 'https://impactdevelopment.github.io/maven/'
+    }
+    maven {
+        name = 'swt-repo'
+        url = "http://maven-eclipse.github.io/maven"
+    }
+    maven {
+        name = "jitpack.io"
+        url = "https://jitpack.io"
+    }
+    maven {
+        name = 'lukflug'
+        url = 'https://lukflug.github.io/maven'
+    }
+    mavenCentral()
+    jcenter()
+}
+
+configurations {
+    shade
+    compile.extendsFrom(shade)
+}
+
+dependencies {
+    compile("org.spongepowered:mixin:0.7.4-SNAPSHOT") {//
+        exclude module: 'launchwrapper'
+        exclude module: 'guava'
+        exclude module: 'gson'
+        exclude module: 'commons-io'
+    }
+    compile('com.lukflug:panelstudio:0.1.8')
+    compile('com.lukflug:panelstudio-mc12:0.1.8')
+    compile group: 'net.jodah', name: 'typetools', version: '0.6.3'
+    compile group: "com.googlecode.json-simple", name: "json-simple", version: "1.1.1"
+    compile group: 'club.minnced', name: 'java-discord-rpc', version: '2.0.1'
+    compile group: 'org.yaml', name: 'snakeyaml', version: '1.19'
+    compile(group: 'org.reflections', name: 'reflections', version: '0.9.11') {
+        exclude group: 'com.google.guava', module: 'guava'
+    }
+    shade 'com.neovisionaries:nv-websocket-client:2.14'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+    rename '(.+_at.cfg)', 'META-INF/$1'
+}
+
+mixin {
+    defaultObfuscationEnv searge
+    add sourceSets.main, 'mixins.kisman.refmap.json'
+}
+
+reobf {
+    shadowJar {
+        mappingType = 'SEARGE'
+        classpath = sourceSets.main.compileClasspath
+    }
+}
+jar {
+    manifest {
+        attributes(
+                'MixinConfigs': 'mixins.Kisman.json',
+                'tweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+                'TweakOrder': 0,
+                'FMLCorePluginContainsFMLMod': 'true',
+                'FMLCorePlugin': 'Main',//com.kisman.cc.mixin.KismanMixinLoader
+                'ForceLoadAsMod': 'true',
+                'FMLAT': 'kisman_at.cfg'
+        )
+    }
+}
+shadowJar {
+    dependencies {
+        include(dependency('org.spongepowered:mixin'))
+        include(dependency('net.jodah:typetools'))
+        include(dependency('com.googlecode.json-simple:json-simple:1.1.1'))
+        include(dependency('club.minnced:java-discord-rpc:2.0.1'))
+        include(dependency('com.lukflug:panelstudio'))
+        include(dependency('com.lukflug:panelstudio-mc12'))
+        include(dependency('org.yaml:snakeyaml'))
+        include(dependency('org.reflections:reflections'))
+        include(dependency('org.javassist:javassist'))
+    }
+    exclude 'dummyThing'
+    exclude 'LICENSE.txt'
+    classifier = 'release'
+}
+
+build.dependsOn(shadowJar)
